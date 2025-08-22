@@ -13,11 +13,6 @@ import zipfile
 import os
 
 ZIP_PATH = "out.zip"   # mismo directorio que streamlit_app.py
-
-# Diagnóstico rápido (puedes quitarlo luego)
-st.write("cwd:", os.getcwd())
-st.write("archivos aquí:", os.listdir("."))
-
 # Abrir el ZIP y leer el primer CSV que encuentre
 with zipfile.ZipFile(ZIP_PATH, "r") as z:
     csv_files = [n for n in z.namelist() if n.lower().endswith(".csv")]
