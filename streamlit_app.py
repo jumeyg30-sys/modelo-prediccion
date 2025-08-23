@@ -139,7 +139,7 @@ common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
 # Filtrado de la data
-filtered = filter_df(df, common, scient, selected_months, selected_var)
+filtered = filter_df(df, common, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
