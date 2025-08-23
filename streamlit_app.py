@@ -48,3 +48,20 @@ def load_data(csv_path: str) -> pd.DataFrame:
 
     return df
 
+
+def filter_df(
+    df: pd.DataFrame,
+    common_name: Optional[str],
+    scientific_name: Optional[str],
+    months: List[int] | None,
+) -> pd.DataFrame:
+    out = df.copy()
+    if common_name:
+        out = out[out["COMMON NAME"] == common_name]
+    if scientific_name:
+        out = out[out["SCIENTIFIC NAME"] == scientific_name]
+    if months and "MONTH_x" in out.columns:
+        out = out[out["MONTH_x"].isin(months)]
+    return out
+
+
