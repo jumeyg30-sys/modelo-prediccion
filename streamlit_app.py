@@ -2,6 +2,8 @@ import streamlit as st
 import zipfile
 import os
 import pandas as pd
+from typing import List
+
 
 st.set_page_config(
     page_title="Avifauna & Clima — Dashboard",
