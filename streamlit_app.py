@@ -104,19 +104,15 @@ def agg_time_series(
 # Barra lateral (entrada de datos) para buscar por nombre común o científico
 #--------------------------------------------------------------------------
 
+st.sidebar.header("⚙️ Configuración & Filtros")
 
-# Barra lateral para filtros
-st.sidebar.title("Filtros de Búsqueda")
+# Filtros de la barra lateral
+common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
+scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
 
-# Filtro de nombre común de la especie
-common_name = st.sidebar.selectbox("Selecciona el Nombre Común de la Especie", df['COMMON NAME'].unique())
+st.sidebar.subheader("🎯 Filtros por especie")
+selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
 
-# Filtro de nombre científico de la especie
-scientific_name = st.sidebar.selectbox("Selecciona el Nombre Científico de la Especie", df['SCIENTIFIC NAME'].unique())
-
-# Filtro para la variable climática
-clim_variable = st.sidebar.selectbox("Selecciona una Variable Climática", ['PRECTOTCORR', 'PS', 'QV2M', 'RH2M', 'T2M', 'T2MDEW', 'T2MWET', 'T2M_MAX', 'T2M_MIN', 'T2M_RANGE', 'TS', 'WD10M', 'WD2M', 'WS10M', 'WS10M_MAX', 'WS10M_MIN', 'WS10M_RANGE', 'WS2M', 'WS2M_MAX', 'WS2M_MIN', 'WS2M_RANGE'])
-
-# Filtrar los datos por nombre común y científico
-filtered_df = df[(df['COMMON NAME'] == common_name) & (df['SCIENTIFIC NAME'] == scientific_name)]
-
+common = None if selected_common == "(Todos)" else selected_common
+scient = None if selected_scient == "(Todos)" else selected_scient
