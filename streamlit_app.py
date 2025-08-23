@@ -193,17 +193,6 @@ def generar_grafico(especie, var):
     st.pyplot(fig)
 
 
-**
-
-
-
-
-
-
-
-
-
-
 
 # ------------------------
 # Secciones (Tabs principales)
