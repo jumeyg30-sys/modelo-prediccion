@@ -104,9 +104,6 @@ else:
 common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
 scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
 
-# Barra lateral (entrada de datos) para buscar por nombre común o científico
-st.sidebar.header("⚙️ Configuración & Filtros")
-
 
 # Widgets de filtros — sincronizados
 st.sidebar.subheader("🎯 Filtros por especie")
@@ -124,10 +121,18 @@ if scient:
     candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
     st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
 
-
 # Filtrado principal según la barra lateral
 filtered = filter_df(df, scient, common)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
 
+# ------------------------
+# Secciones (Tabs principales)
+# ------------------------
+tab_resumen, tab_especie, tab_variable, tab_modelos = st.tabs([
+    "📊 Resumen",
+    "🕊️ Especie",
+    "🌡️ Variable climática",
+    "🧠 Modelos",
+])
