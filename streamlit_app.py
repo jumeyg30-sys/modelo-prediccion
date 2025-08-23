@@ -15,23 +15,29 @@ st.title("🐦 Dashboard Avifauna & Variables Climáticas")
 st.caption("Explora avistamientos por especie y su relación con variables climáticas. Filtra, compara y prepara insumos para tu modelo predictivo.")
 st.info('Modelo multivariante para predecir abundancia y diversidad de aves según variables climáticas en el campus de la ESPOL ')
 
-
 # ---------------------------------
 # Utilidades y carga de datos (cache)
 # ---------------------------------
 @st.cache_data(show_spinner=True)
-def load_data(csv_path: str) -> pd.DataFrame:
-    df = pd.read_csv(csv_path)
+def load_data(zip_path: str) -> pd.DataFrame:
+    """Carga los datos desde un archivo ZIP y realiza las conversiones necesarias."""
+    with zipfile.ZipFile(zip_path, "r") as z:
+        csv_files = [n for n in z.namelist() if n.lower().endswith(".csv")]
+        
+        if not csv_files:
+            st.error("El ZIP no contiene ningún archivo CSV")
+            st.stop()
 
+        # Tomamos el primer archivo CSV
+        csv_name = csv_files[0]
+        with z.open(csv_name) as f:
+            df = pd.read_csv(f)
+    
     # Normalizaciones útiles
-    # Convertir YEAR_MONTH a periodo/fecha si es posible
     if "YEAR_MONTH" in df.columns:
-        # Intenta parsear como YYYY-MM o YYYY-MM-DD
-        try:
-            df["YEAR_MONTH"] = df["YEAR_MONTH"].astype(str)
-        except Exception:
-            pass
-            
+        # Convertir YEAR_MONTH a string
+        df["YEAR_MONTH"] = df["YEAR_MONTH"].astype(str)
+    
     # Asegurar tipo numérico para columnas climáticas y avistamientos
     numeric_cols = [
         "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
@@ -50,8 +56,6 @@ def load_data(csv_path: str) -> pd.DataFrame:
 
     return df
 
-from typing import Optional
-
 def filter_df(
     df_out: pd.DataFrame,
     common_name: Optional[str] = None,
@@ -59,10 +63,8 @@ def filter_df(
     month: Optional[str] = None,
     climate_var: Optional[str] = None
 ) -> pd.DataFrame:
-    """
-    Filtra el DataFrame según las especies comunes, científicas,
-    el mes y la variable climática (si se proporcionan).
-    """
+    """Filtra el DataFrame según las especies comunes, científicas,
+    el mes y la variable climática (si se proporcionan)."""
     if common_name:
         df_out = df_out[df_out["COMMON NAME"] == common_name]
     
@@ -89,39 +91,7 @@ def infer_climate_columns(df: pd.DataFrame) -> List[str]:
     ]
     return [c for c in declared if c in df.columns]
 
-def agg_time_series(
-    df: pd.DataFrame,
-    y_col: str,
-    by_species: bool = False,
-) -> pd.DataFrame:
-    """Agrega por tiempo (YEAR_MONTH) y opcionalmente por especie.
-    Si YEAR_MONTH no existe o es nulo, intenta usar MONTH_x como alternativa (no ideal)."""
-    has_date = "YEAR_MONTH" in df.columns and df["YEAR_MONTH"].notna().any()
-    if has_date:
-        group_cols = ["YEAR_MONTH"]
-    else:
-        group_cols = ["MONTH_x"]  # fallback
-
-    if by_species:
-        group_cols = group_cols + ["COMMON NAME", "SCIENTIFIC NAME"]
-
-    g = df.groupby(group_cols, dropna=True, as_index=False)[y_col].mean()
-    # Orden temporal
-    if has_date:
-        g = g.sort_values("YEAR_MONTH")
-    else:
-        g = g.sort_values("MONTH_x")
-    return g
-
-#-------------------------------------------------------------------------
-# Barra lateral (entrada de datos) para buscar por nombre común o científico
-#--------------------------------------------------------------------------
-
-st.sidebar.header("⚙️ Configuración & Filtros")
-csv_default_path = "df_out.csv"
-csv_path = st.sidebar.text_input("Ruta del CSV", value=csv_default_path)
-
-# Asegúrate de cargar los datos primero
+# Cargar datos desde ZIP
 df = load_data("out.zip")
 
 # Verificar que df es un DataFrame
@@ -131,39 +101,25 @@ if isinstance(df, pd.DataFrame):
 else:
     st.error("El archivo CSV no se cargó correctamente.")
 
-
 # Mapas de nombres (para sincronizar filtros)
 common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
 scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
 
-# Widgets de filtros — sincronizados
+# Barra lateral (entrada de datos) para buscar por nombre común o científico
+st.sidebar.header("⚙️ Configuración & Filtros")
+csv_default_path = "df_out.csv"
+csv_path = st.sidebar.text_input("Ruta del CSV", value=csv_default_path)
+
+# Filtros por especie
 st.sidebar.subheader("🎯 Filtros por especie")
 selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
 selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
 
-
 common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
-# Si el usuario escoge un common_name, acota el scientific y viceversa (visual)
-if common:
-    candidates = df.loc[df["COMMON NAME"] == common, "SCIENTIFIC NAME"].dropna().unique().tolist()
-    st.sidebar.caption(f"Especies científicas para '{common}': {', '.join(sorted(set(map(str, candidates))))}")
-if scient:
-    candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
-    st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
+# Filtrado de la data
+filtered = filter_df(df, common, scient, None, None)
 
-st.sidebar.subheader("🌡️ Filtro de variable climática")
-selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
-
-st.sidebar.subheader("🗓️ Filtro de meses")
-months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
-selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
-
-# Filtrado principal según la barra lateral
-filtered = filter_df(df, common, scient, selected_months)
-
-
-
-
-
+# Mostrar el DataFrame filtrado
+st.write("Datos Filtrados:", filtered)
