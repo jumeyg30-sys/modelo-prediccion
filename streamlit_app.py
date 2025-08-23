@@ -121,6 +121,15 @@ st.sidebar.header("⚙️ Configuración & Filtros")
 csv_default_path = "df_out.csv"
 csv_path = st.sidebar.text_input("Ruta del CSV", value=csv_default_path)
 
+# Asegúrate de cargar los datos primero
+df = load_data("out.zip")
+
+# Verificar que df es un DataFrame
+if isinstance(df, pd.DataFrame):
+    # Llamar a la función de inferencia de columnas climáticas
+    CLIMATE_COLS = infer_climate_columns(df)
+else:
+    st.error("El archivo CSV no se cargó correctamente.")
 
 
 # Detectar columnas climáticas disponibles
