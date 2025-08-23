@@ -48,20 +48,29 @@ def load_data(csv_path: str) -> pd.DataFrame:
 
     return df
 
+from typing import Optional
 
 def filter_df(
-    df: pd.DataFrame,
-    common_name: Optional[str],
-    scientific_name: Optional[str],
-    months: List[int] | None,
+    df_out: pd.DataFrame,
+    common_name: Optional[str] = None,
+    scientific_name: Optional[str] = None,
+    month: Optional[str] = None,
+    climate_var: Optional[str] = None
 ) -> pd.DataFrame:
-    out = df.copy()
+    """
+    Filtra el DataFrame según las especies comunes, científicas,
+    el mes y la variable climática (si se proporcionan).
+    """
     if common_name:
-        out = out[out["COMMON NAME"] == common_name]
+        df_out = df_out[df_out["COMMON NAME"] == common_name]
+    
     if scientific_name:
-        out = out[out["SCIENTIFIC NAME"] == scientific_name]
-    if months and "MONTH_x" in out.columns:
-        out = out[out["MONTH_x"].isin(months)]
-    return out
-
-
+        df_out = df_out[df_out["SCIENTIFIC NAME"] == scientific_name]
+    
+    if month:
+        df_out = df_out[df_out["YEAR_MONTH"].str.contains(month)]
+    
+    if climate_var:
+        df_out = df_out[df_out[climate_var].notnull()]  # Filtrar valores no nulos en la variable climática
+    
+    return df_out
