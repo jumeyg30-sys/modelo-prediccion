@@ -100,3 +100,20 @@ def agg_time_series(
         g = g.sort_values("MONTH_x")
     return g
 
+#-------------------------------------------------------------------------
+# Barra lateral (entrada de datos) para buscar por nombre común o científico
+#--------------------------------------------------------------------------
+
+st.sidebar.header("Filtrar Especies")
+common_name = st.sidebar.selectbox("Selecciona el Nombre Común", ["Todos"] + df_out["COMMON NAME"].unique().tolist())
+scientific_name = st.sidebar.selectbox("Selecciona el Nombre Científico", ["Todos"] + df_out["SCIENTIFIC NAME"].unique().tolist())
+
+# Filtrar el DataFrame según las selecciones
+if common_name != "Todos":
+    df_out = df_out[df_out["COMMON NAME"] == common_name]
+
+if scientific_name != "Todos":
+    df_out = df_out[df_out["SCIENTIFIC NAME"] == scientific_name]
+
+# Mostrar el DataFrame filtrado
+st.write("Datos Filtrados:", df_out)
