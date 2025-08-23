@@ -135,6 +135,22 @@ else:
 
 selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + filtered_scientific_names, index=0)
 
+# Si se selecciona un nombre común, actualizamos el científico y viceversa
+common = None if selected_common == "(Todos)" else selected_common
+scient = None if selected_scient == "(Todos)" else selected_scient
+
+# Filtros por especie (conexión entre nombre común y científico)
+st.sidebar.subheader("🎯 Filtros por especie")
+selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
+
+# Filtrar los científicos disponibles basados en el nombre común
+if selected_common != "(Todos)":
+    filtered_scientific_names = df[df["COMMON NAME"] == selected_common]["SCIENTIFIC NAME"].dropna().unique()
+else:
+    filtered_scientific_names = scientific_names
+
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + filtered_scientific_names, index=0)
+
 common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
@@ -143,6 +159,11 @@ filtered = filter_df(df, common, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
+
+
+
+
+
 
 
 
