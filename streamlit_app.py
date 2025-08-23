@@ -28,10 +28,10 @@ def load_data(csv_path: str) -> pd.DataFrame:
     if "YEAR_MONTH" in df.columns:
         # Intenta parsear como YYYY-MM o YYYY-MM-DD
         try:
-            df["YEAR_MONTH"] = pd.to_datetime(df["YEAR_MONTH"], errors="coerce")
+            df["YEAR_MONTH"] = df["YEAR_MONTH"].astype(str)
         except Exception:
             pass
-
+            
     # Asegurar tipo numérico para columnas climáticas y avistamientos
     numeric_cols = [
         "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
