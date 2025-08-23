@@ -76,6 +76,17 @@ def filter_df(
     return df_out
 
 
+def infer_climate_columns(df: pd.DataFrame) -> List[str]:
+    """Devuelve la lista de columnas que consideraremos como variables climáticas.
+    Se basa en tu lista declarada; ignora columnas de identificación y conteo."""
+    declared = [
+        "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
+        "T2M_MAX", "T2M_MIN", "T2M_RANGE", "TS", "WD10M", "WD2M",
+        "WS10M", "WS10M_MAX", "WS10M_MIN", "WS10M_RANGE", "WS2M",
+        "WS2M_MAX", "WS2M_MIN", "WS2M_RANGE",
+    ]
+    return [c for c in declared if c in df.columns]
+
 def agg_time_series(
     df: pd.DataFrame,
     y_col: str,
