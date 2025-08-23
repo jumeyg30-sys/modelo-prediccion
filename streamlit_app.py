@@ -136,3 +136,30 @@ tab_resumen, tab_especie, tab_variable, tab_modelos = st.tabs([
     "🌡️ Variable climática",
     "🧠 Modelos",
 ])
+
+
+
+# -------------------
+# Tab: Resumen global
+# -------------------
+with tab_resumen:
+    st.subheader("Distribución de avistamientos por especie (top N)")
+
+    # Agrega por COMMON NAME
+    if "COMMON NAME" in df.columns and "avistamientos" in df.columns:
+        agg = (
+            df.groupby("COMMON NAME", as_index=False)["avistamientos"].sum()
+              .sort_values("avistamientos", ascending=False)
+        )
+        top_n = st.slider("¿Cuántas especies mostrar?", min_value=5, max_value=min(50, len(agg)), value=min(20, len(agg)))
+        agg_top = agg.head(top_n)
+        fig_bar = px.bar(
+            agg_top,
+            x="COMMON NAME",
+            y="avistamientos",
+            title="Avistamientos totales por especie",
+        )
+        fig_bar.update_layout(xaxis_title="Especie (Common Name)", yaxis_title="Avistamientos")
+        st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        st.info("No se encuentran columnas 'COMMON NAME' y/o 'avistamientos'.")
