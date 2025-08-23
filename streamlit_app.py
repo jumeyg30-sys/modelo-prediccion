@@ -131,13 +131,6 @@ if scient:
     candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
     st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
 
-st.sidebar.subheader("🌡️ Filtro de variable climática")
-selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
-
-st.sidebar.subheader("🗓️ Filtro de meses")
-months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
-selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
-
 # Filtrado principal según la barra lateral
 filtered = filter_df(df, common, scient)
 
