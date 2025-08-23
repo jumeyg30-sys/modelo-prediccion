@@ -122,3 +122,8 @@ filtered = filter_df(df, common, scient, None, None)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
+
+# Agregar un mensaje de depuración para ver si la barra lateral está cargando
+st.write("Barra lateral cargada correctamente")
+
+
