@@ -138,15 +138,6 @@ selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + 
 common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
-# Filtro de variable climática
-st.sidebar.subheader("🌡️ Filtro de variable climática")
-selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
-
-# Filtro de meses
-st.sidebar.subheader("🗓️ Filtro de meses")
-months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
-selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
-
 # Filtrado de la data
 filtered = filter_df(df, common, scient, selected_months, selected_var)
 
