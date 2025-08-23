@@ -132,9 +132,6 @@ else:
     st.error("El archivo CSV no se cargó correctamente.")
 
 
-# Detectar columnas climáticas disponibles
-CLIMATE_COLS = infer_climate_columns(df)
-
 # Mapas de nombres (para sincronizar filtros)
 common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
 scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
@@ -145,6 +142,26 @@ selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + comm
 selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
 
 
+common = None if selected_common == "(Todos)" else selected_common
+scient = None if selected_scient == "(Todos)" else selected_scient
+
+# Si el usuario escoge un common_name, acota el scientific y viceversa (visual)
+if common:
+    candidates = df.loc[df["COMMON NAME"] == common, "SCIENTIFIC NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Especies científicas para '{common}': {', '.join(sorted(set(map(str, candidates))))}")
+if scient:
+    candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
+
+st.sidebar.subheader("🌡️ Filtro de variable climática")
+selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
+
+st.sidebar.subheader("🗓️ Filtro de meses")
+months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
+selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
+
+# Filtrado principal según la barra lateral
+filtered = filter_df(df, common, scient, selected_months)
 
 
 
