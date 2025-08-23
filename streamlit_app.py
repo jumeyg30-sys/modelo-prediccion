@@ -128,6 +128,83 @@ filtered = filter_df(df, scient, common)
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
 
+#-------------------------------------
+
+# Lista de especies disponibles para filtrar
+mis_especies = df_out['COMMON NAME'].unique().tolist()
+
+# Variables climáticas (asumidas según tu código)
+variables_climaticas = ['T2M_MIN', 'T2M_MAX', 'PS', 'QV2M', 'WS10M_MAX', 
+                        'PRECTOTCORR', 'T2M_RANGE', 'RH2M']
+
+# Filtro de la especie seleccionado en la barra lateral (ya lo tienes)
+especie_seleccionada = st.sidebar.selectbox("Selecciona una especie", mis_especies)
+
+# Filtro de la variable climática
+variable_seleccionada = st.sidebar.selectbox("Selecciona una variable climática", variables_climaticas)
+
+# Ordenar los meses
+orden_meses = ['01','02','03','04','05','06','07','08','09','10','11','12']
+
+# Función para crear el gráfico
+def generar_grafico(especie, var):
+    # Filtrar los datos para la especie seleccionada
+    datos = df_out[df_out['COMMON NAME'] == especie].copy()
+    if datos.empty:
+        st.warning(f"No hay datos para la especie '{especie}'.")
+        return
+
+    # Asegurar que MONTH esté formateado correctamente
+    df_out['MONTH_x'] = df_out['MONTH_x'].astype(str).str.zfill(2)
+
+    # Agregar promedio mensual de la variable climática
+    clima = df_out.groupby('MONTH_x')[var].mean().reset_index()
+
+    # Unir los datos de avistamientos con los de clima
+    datos = pd.merge(datos, clima, on='MONTH_x', how='left')
+
+    # Ordenar los meses correctamente
+    datos['MONTH_x'] = pd.Categorical(datos['MONTH_x'], categories=orden_meses, ordered=True)
+    datos = datos.sort_values('MONTH_x')
+
+    # Verifica que no esté vacío después del merge
+    if datos[var].isnull().all():
+        st.warning(f"Todos los valores de {var} son NaN después del merge.")
+        return
+
+    # Crear el gráfico
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Eje izquierdo: log de avistamientos
+    sns.lineplot(data=datos, x='MONTH_x', y='log_avistamientos', label='log10(Avistamientos + 1)', color='blue', ax=ax1)
+    ax1.set_ylabel('log10(Avistamientos + 1)', color='blue')
+
+    # Eje derecho: variable climática
+    ax2 = ax1.twinx()
+    sns.lineplot(data=datos, x='MONTH_x', y=var, label=var, color='red', ax=ax2)
+    ax2.set_ylabel(var, color='red')
+
+    # Título y ajustes
+    plt.title(f'Avistamientos (log) y {var} por mes - {especie}')
+    plt.xlabel('Mes')
+    plt.tight_layout()
+
+    # Mostrar el gráfico en Streamlit
+    st.pyplot(fig)
+
+
+**
+
+
+
+
+
+
+
+
+
+
+
 # ------------------------
 # Secciones (Tabs principales)
 # ------------------------
