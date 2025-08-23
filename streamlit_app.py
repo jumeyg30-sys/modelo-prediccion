@@ -109,10 +109,6 @@ def agg_time_series(
 # Barra lateral (entrada de datos)
 # ------------------
 st.sidebar.header("⚙️ Configuración & Filtros")
-
-
-df = df_out
-
 # Filtros de la barra lateral
 common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
 scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
