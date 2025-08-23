@@ -4,36 +4,8 @@ import os
 import pandas as pd
 from typing import List, Optional, Tuple
 
-st.set_page_config(
-    page_title="Avifauna & Clima — Dashboard",
-    page_icon="🕊️",
-    layout="wide",
-)
-
-st.title("🐦 Dashboard Avifauna & Variables Climáticas")
-st.caption("Explora avistamientos por especie y su relación con variables climáticas. Filtra, compara y prepara insumos para tu modelo predictivo.")
-st.info('Modelo multivariante para predecir abundancia y diversidad de aves según variables climáticas en el campus de la ESPOL ')
-
 import streamlit as st
 import zipfile
-import os
-import pandas as pd
-from typing import List, Optional
-
-st.set_page_config(
-    page_title="Avifauna & Clima — Dashboard",
-    page_icon="🕊️",
-    layout="wide",
-)
-
-st.title("🐦 Dashboard Avifauna & Variables Climáticas")
-st.caption("Explora avistamientos por especie y su relación con variables climáticas. Filtra, compara y prepara insumos para tu modelo predictivo.")
-st.info('Modelo multivariante para predecir abundancia y diversidad de aves según variables climáticas en el campus de la ESPOL ')
-
-
-import streamlit as st
-import zipfile
-import os
 import pandas as pd
 from typing import List, Optional
 
@@ -153,13 +125,10 @@ else:
 selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + filtered_scientific_names, index=0)
 
 # Si se selecciona un nombre común, actualizamos el científico y viceversa
-common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
-
-
 # Filtrado de la data
-filtered = filter_df(df, common, scient)
+filtered = filter_df(df, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
