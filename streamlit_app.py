@@ -126,7 +126,7 @@ if scient:
 
 
 # Filtrado principal según la barra lateral
-filtered = filter_df(df, scient)
+filtered = filter_df(df, scient, common)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
