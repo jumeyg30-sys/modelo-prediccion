@@ -53,32 +53,32 @@ st.dataframe(df_out.head())
 
 
 
-    # Normalizaciones útiles
-    # Convertir YEAR_MONTH a periodo/fecha si es posible
-    if "YEAR_MONTH" in df.columns:
-        # Intenta parsear como YYYY-MM o YYYY-MM-DD
-        try:
-            df["YEAR_MONTH"] = pd.to_datetime(df["YEAR_MONTH"], errors="coerce")
-        except Exception:
-            pass
+# Normalizaciones útiles
+# Convertir YEAR_MONTH a periodo/fecha si es posible
+if "YEAR_MONTH" in df.columns:
+    # Intenta parsear como YYYY-MM o YYYY-MM-DD
+    try:
+        df["YEAR_MONTH"] = pd.to_datetime(df["YEAR_MONTH"], errors="coerce")
+    except Exception:
+        pass
 
-    # Asegurar tipo numérico para columnas climáticas y avistamientos
-    numeric_cols = [
-        "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
-        "T2M_MAX", "T2M_MIN", "T2M_RANGE", "TS", "WD10M", "WD2M",
-        "WS10M", "WS10M_MAX", "WS10M_MIN", "WS10M_RANGE", "WS2M",
-        "WS2M_MAX", "WS2M_MIN", "WS2M_RANGE", "avistamientos", "log_avistamientos",
-    ]
-    for c in numeric_cols:
-        if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
+# Asegurar tipo numérico para columnas climáticas y avistamientos
+numeric_cols = [
+    "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
+    "T2M_MAX", "T2M_MIN", "T2M_RANGE", "TS", "WD10M", "WD2M",
+    "WS10M", "WS10M_MAX", "WS10M_MIN", "WS10M_RANGE", "WS2M",
+    "WS2M_MAX", "WS2M_MIN", "WS2M_RANGE", "avistamientos", "log_avistamientos",
+]
+for c in numeric_cols:
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    # Estándares de nombre (quitar espacios laterales)
-    for c in ["COMMON NAME", "SCIENTIFIC NAME"]:
-        if c in df.columns:
-            df[c] = df[c].astype(str).str.strip()
+# Estándares de nombre (quitar espacios laterales)
+for c in ["COMMON NAME", "SCIENTIFIC NAME"]:
+    if c in df.columns:
+        df[c] = df[c].astype(str).str.strip()
 
-    return df
+return df
 
 
 def infer_climate_columns(df: pd.DataFrame) -> List[str]:
