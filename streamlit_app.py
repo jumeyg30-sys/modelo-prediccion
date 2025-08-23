@@ -6,7 +6,6 @@ from typing import List, Optional, Tuple
 
 import streamlit as st
 import zipfile
-import os
 import pandas as pd
 from typing import List, Optional
 
@@ -63,11 +62,16 @@ def load_data(zip_path: str) -> pd.DataFrame:
 
 def filter_df(
     df_out: pd.DataFrame,
+    common_name: Optional[str] = None,
     scientific_name: Optional[str] = None,
     month: Optional[str] = None,
     climate_var: Optional[str] = None
 ) -> pd.DataFrame:
-    """Filtra el DataFrame según el nombre científico, el mes y la variable climática (si se proporcionan)."""
+    """Filtra el DataFrame según las especies comunes, científicas,
+    el mes y la variable climática (si se proporcionan)."""
+    if common_name:
+        df_out = df_out[df_out["COMMON NAME"] == common_name]
+    
     if scientific_name:
         df_out = df_out[df_out["SCIENTIFIC NAME"] == scientific_name]
     
@@ -102,29 +106,32 @@ else:
     st.error("El archivo CSV no se cargó correctamente.")
 
 # Mapas de nombres (para sincronizar filtros)
+common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
 scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
 
-# Barra lateral (entrada de datos) para buscar por nombre científico
+# Barra lateral (entrada de datos) para buscar por nombre común o científico
 st.sidebar.header("⚙️ Configuración & Filtros")
 
-# Filtro por nombre científico
-st.sidebar.subheader("🎯 Filtro por nombre científico")
-selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
+# Filtros por especie (conexión entre nombre común y científico)
+st.sidebar.subheader("🎯 Filtros por especie")
+selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
 
-# Si se selecciona un nombre científico, filtrar los datos
+# Filtrar los científicos disponibles basados en el nombre común
+if selected_common != "(Todos)":
+    filtered_scientific_names = df[df["COMMON NAME"] == selected_common]["SCIENTIFIC NAME"].dropna().unique()
+else:
+    filtered_scientific_names = scientific_names
+
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + filtered_scientific_names, index=0)
+
+# Si se selecciona un nombre común, actualizamos el científico y viceversa
+common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
-# Filtro de variable climática
-st.sidebar.subheader("🌡️ Filtro de variable climática")
-selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
-
-# Filtro de meses
-st.sidebar.subheader("🗓️ Filtro de meses")
-months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
-selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
 
 # Filtrado de la data
-filtered = filter_df(df, selected_scient, selected_months, selected_var)
+filtered = filter_df(df, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
+
