@@ -110,9 +110,8 @@ def agg_time_series(
 # ------------------
 st.sidebar.header("⚙️ Configuración & Filtros")
 
-# Carga de datos
-csv_path = "df_out.csv"  # Ruta del archivo CSV (ajustar según el archivo real)
-df = load_data(csv_path)
+
+df = df_out
 
 # Filtros de la barra lateral
 common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
