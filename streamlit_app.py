@@ -74,3 +74,29 @@ def filter_df(
         df_out = df_out[df_out[climate_var].notnull()]  # Filtrar valores no nulos en la variable climática
     
     return df_out
+
+
+def agg_time_series(
+    df: pd.DataFrame,
+    y_col: str,
+    by_species: bool = False,
+) -> pd.DataFrame:
+    """Agrega por tiempo (YEAR_MONTH) y opcionalmente por especie.
+    Si YEAR_MONTH no existe o es nulo, intenta usar MONTH_x como alternativa (no ideal)."""
+    has_date = "YEAR_MONTH" in df.columns and df["YEAR_MONTH"].notna().any()
+    if has_date:
+        group_cols = ["YEAR_MONTH"]
+    else:
+        group_cols = ["MONTH_x"]  # fallback
+
+    if by_species:
+        group_cols = group_cols + ["COMMON NAME", "SCIENTIFIC NAME"]
+
+    g = df.groupby(group_cols, dropna=True, as_index=False)[y_col].mean()
+    # Orden temporal
+    if has_date:
+        g = g.sort_values("YEAR_MONTH")
+    else:
+        g = g.sort_values("MONTH_x")
+    return g
+
