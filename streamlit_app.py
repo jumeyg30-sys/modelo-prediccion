@@ -110,5 +110,21 @@ csv_path = st.sidebar.text_input("Ruta del CSV", value=csv_default_path)
 
 
 
+# Detectar columnas climáticas disponibles
+CLIMATE_COLS = infer_climate_columns(df)
+
+# Mapas de nombres (para sincronizar filtros)
+common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
+scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
+
+# Widgets de filtros — sincronizados
+st.sidebar.subheader("🎯 Filtros por especie")
+selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
+
+
+
+
+
 
 
