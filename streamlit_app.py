@@ -107,19 +107,12 @@ scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFI
 # Barra lateral (entrada de datos) para buscar por nombre común o científico
 st.sidebar.header("⚙️ Configuración & Filtros")
 
-# Filtros por especie (conexión entre nombre común y científico)
+
+# Widgets de filtros — sincronizados
 st.sidebar.subheader("🎯 Filtros por especie")
 selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
 
-# Filtrar los científicos disponibles basados en el nombre común
-if selected_common != "(Todos)":
-    filtered_scientific_names = df[df["COMMON NAME"] == selected_common]["SCIENTIFIC NAME"].dropna().unique()
-else:
-    filtered_scientific_names = scientific_names
-
-selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + filtered_scientific_names, index=0)
-
-# Si se selecciona un nombre común, actualizamos el científico y viceversa
 common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
@@ -131,8 +124,9 @@ if scient:
     candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
     st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
 
+
 # Filtrado principal según la barra lateral
-filtered = filter_df(df, common, scient)
+filtered = filter_df(df, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
