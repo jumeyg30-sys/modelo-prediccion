@@ -3,6 +3,7 @@ import zipfile
 import os
 import pandas as pd
 from typing import List, Optional, Tuple
+import plotly.express as px
 
 st.set_page_config(
     page_title="Avifauna & Clima — Dashboard",
