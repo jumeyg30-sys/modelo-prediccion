@@ -4,11 +4,6 @@ import os
 import pandas as pd
 from typing import List, Optional, Tuple
 
-import streamlit as st
-import zipfile
-import pandas as pd
-from typing import List, Optional
-
 st.set_page_config(
     page_title="Avifauna & Clima — Dashboard",
     page_icon="🕊️",
@@ -128,9 +123,23 @@ selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + 
 common = None if selected_common == "(Todos)" else selected_common
 scient = None if selected_scient == "(Todos)" else selected_scient
 
+# Si el usuario escoge un common_name, acota el scientific y viceversa (visual)
+if common:
+    candidates = df.loc[df["COMMON NAME"] == common, "SCIENTIFIC NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Especies científicas para '{common}': {', '.join(sorted(set(map(str, candidates))))}")
+if scient:
+    candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
 
-# Filtrado de la data
-filtered = filter_df(df, scient)
+st.sidebar.subheader("🌡️ Filtro de variable climática")
+selected_var = st.sidebar.selectbox("Variable climática", options=CLIMATE_COLS if CLIMATE_COLS else ["(no hay)"])
+
+st.sidebar.subheader("🗓️ Filtro de meses")
+months_all = sorted(df["MONTH_x"].dropna().unique().astype(int)) if "MONTH_x" in df.columns else []
+selected_months = st.sidebar.multiselect("Mes(es)", options=months_all, default=months_all)
+
+# Filtrado principal según la barra lateral
+filtered = filter_df(df, common, scient)
 
 # Mostrar el DataFrame filtrado
 st.write("Datos Filtrados:", filtered)
