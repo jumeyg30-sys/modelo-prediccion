@@ -10,6 +10,10 @@ st.set_page_config(
     page_icon="🕊️",
     layout="wide",
 )
+import streamlit as st, os, time
+st.cache_data.clear()  # limpiar caché de datos
+BUILD_TAG = time.strftime("%Y-%m-%d %H:%M:%S")
+st.sidebar.success(f"✅ App cargó este archivo.\nBUILD: {BUILD_TAG}\nCWD: {os.getcwd()}")
 
 # ------------------------------------------------------------------------------
 # Cargar datos
