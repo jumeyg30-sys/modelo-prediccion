@@ -11,11 +11,6 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("🐦 Dashboard Avifauna & Variables Climáticas")
-st.caption("Explora avistamientos por especie y su relación con variables climáticas. Filtra, compara y prepara insumos para tu modelo predictivo.")
-st.info('Modelo multivariante para predecir abundancia y diversidad de aves según variables climáticas en el campus de la ESPOL ')
-
-
 # ------------------------------------------------------------------------------
 # Cargar datos
 # ------------------------------------------------------------------------------
