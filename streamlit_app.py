@@ -74,7 +74,7 @@ def main() -> None:
     # 'data/df_out.csv'. Si estás trabajando en GitHub Desktop, pon la ruta
     # relativa desde la raíz del repositorio.
     
-    data_path = "df_out.zip"   # ajusta al nombre de tu archivo
+    data_path = "out.zip"   # ajusta al nombre de tu archivo
     df = load_data(data_path)
 
     # --------------------------------------------------------------------------
