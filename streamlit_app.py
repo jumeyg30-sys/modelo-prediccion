@@ -201,3 +201,5 @@ with tab_resumen:
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
         st.info("No se encuentran columnas 'COMMON NAME' y/o 'avistamientos'.")
+if __name__ == "__main__":
+    main()
