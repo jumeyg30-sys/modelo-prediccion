@@ -31,7 +31,7 @@ st.info('Modelo multivariante para predecir abundancia y diversidad de aves segÃ
 # ---------------------------------
 # Utilidades y carga de datos (cache)
 # ---------------------------------
-@st.cache_data(show_spinner=True)
+
 def load_data(zip_path: str) -> pd.DataFrame:
     """Carga los datos desde un archivo ZIP y realiza las conversiones necesarias."""
     with zipfile.ZipFile(zip_path, "r") as z:
