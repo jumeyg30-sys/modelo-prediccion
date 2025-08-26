@@ -10,27 +10,30 @@ st.set_page_config(
     page_icon="🕊️",
     layout="wide",
 )
-import streamlit as st, os, time
-st.cache_data.clear()  # limpiar caché de datos
-BUILD_TAG = time.strftime("%Y-%m-%d %H:%M:%S")
-st.sidebar.success(f"✅ App cargó este archivo.\nBUILD: {BUILD_TAG}\nCWD: {os.getcwd()}")
 
-# ------------------------------------------------------------------------------
-# Cargar datos
-# ------------------------------------------------------------------------------
+import streamlit as st
+import zipfile
+import os
+import pandas as pd
+from typing import List, Optional, Tuple
+import plotly.express as px
 
-@st.cache_data  # usa la caché de Streamlit para no recargar el CSV en cada cambio
-def load_data(path: str) -> pd.DataFrame:
-    """Carga el DataFrame desde un archivo CSV.
+st.set_page_config(
+    page_title="Avifauna & Clima — Dashboard",
+    page_icon="🕊️",
+    layout="wide",
+)
 
-    Args:
-        path: Ruta al archivo CSV que contiene df_out. Debe contener las
-            columnas mencionadas en la descripción del usuario: YEAR_MONTH,
-            COMMON NAME, SCIENTIFIC NAME, LAT, LON, y las variables climáticas.
+st.title("🐦 Dashboard Avifauna & Variables Climáticas")
+st.caption("Explora avistamientos por especie y su relación con variables climáticas. Filtra, compara y prepara insumos para tu modelo predictivo.")
+st.info('Modelo multivariante para predecir abundancia y diversidad de aves según variables climáticas en el campus de la ESPOL ')
 
-    Returns:
-        pd.DataFrame: DataFrame con los datos.
-    """
+# ---------------------------------
+# Utilidades y carga de datos (cache)
+# ---------------------------------
+@st.cache_data(show_spinner=True)
+def load_data(zip_path: str) -> pd.DataFrame:
+    """Carga los datos desde un archivo ZIP y realiza las conversiones necesarias."""
     with zipfile.ZipFile(zip_path, "r") as z:
         csv_files = [n for n in z.namelist() if n.lower().endswith(".csv")]
         
@@ -42,135 +45,166 @@ def load_data(path: str) -> pd.DataFrame:
         csv_name = csv_files[0]
         with z.open(csv_name) as f:
             df = pd.read_csv(f)
-    # Convertir la columna YEAR_MONTH en fecha para facilitar los filtros y
-    # ordenamientos. Si tu formato es "YYYY-MM", pandas lo convertirá
-    # correctamente a un Timestamp con el primer día del mes.
+    
+    # Normalizaciones útiles
     if "YEAR_MONTH" in df.columns:
-        df["YEAR_MONTH"] = pd.to_datetime(df["YEAR_MONTH"], errors="coerce")
+        # Convertir YEAR_MONTH a string
+        df["YEAR_MONTH"] = df["YEAR_MONTH"].astype(str)
+    
+    # Asegurar tipo numérico para columnas climáticas y avistamientos
+    numeric_cols = [
+        "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
+        "T2M_MAX", "T2M_MIN", "T2M_RANGE", "TS", "WD10M", "WD2M",
+        "WS10M", "WS10M_MAX", "WS10M_MIN", "WS10M_RANGE", "WS2M",
+        "WS2M_MAX", "WS2M_MIN", "WS2M_RANGE", "avistamientos", "log_avistamientos",
+    ]
+    for c in numeric_cols:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    # Estándares de nombre (quitar espacios laterales)
+    for c in ["COMMON NAME", "SCIENTIFIC NAME"]:
+        if c in df.columns:
+            df[c] = df[c].astype(str).str.strip()
+
     return df
 
-
-def main() -> None:
-    """Función principal que define la interfaz y la lógica de la app."""
-
-    # --------------------------------------------------------------------------
-    # Título y descripción
-    # --------------------------------------------------------------------------
-    # Las funciones st.title, st.header y st.write se usan para mostrar texto en
-    # la aplicación. Según la documentación, st.title genera un texto grande
-    # ideal como título【382884099989979†L98-L108】; st.header y st.subheader se
-    # utilizan para secciones y subsecciones【382884099989979†L115-L129】, y
-    # st.write permite añadir párrafos o incluso dataframes【382884099989979†L138-L149】.
-    st.title("Dashboard interactivo de avifauna y variables climáticas")
-    st.write(
-        """
-        Esta aplicación permite explorar la abundancia de avifauna en relación con
-        variables climáticas. Usa los filtros en la barra lateral para seleccionar
-        una especie y una variable climática y explora los gráficos generados.
-        """
-    )
-
-    # --------------------------------------------------------------------------
-    # Cargar el dataset
-    # --------------------------------------------------------------------------
-    # Ajusta la ruta al CSV según tu entorno. Por ejemplo, si el archivo se
-    # encuentra en un directorio de datos dentro de tu proyecto, usa
-    # 'data/df_out.csv'. Si estás trabajando en GitHub Desktop, pon la ruta
-    # relativa desde la raíz del repositorio.
+def filter_df(
+    df_out: pd.DataFrame,
+    common_name: Optional[str] = None,
+    scientific_name: Optional[str] = None,
+    month: Optional[str] = None,
+    climate_var: Optional[str] = None
+) -> pd.DataFrame:
+    """Filtra el DataFrame según las especies comunes, científicas,
+    el mes y la variable climática (si se proporcionan)."""
+    if common_name:
+        df_out = df_out[df_out["COMMON NAME"] == common_name]
     
-    data_path = "out.zip"   # ajusta al nombre de tu archivo
-    df = load_data(data_path)
+    if scientific_name:
+        df_out = df_out[df_out["SCIENTIFIC NAME"] == scientific_name]
+    
+    if month:
+        df_out = df_out[df_out["YEAR_MONTH"].str.contains(month)]
+    
+    if climate_var:
+        df_out = df_out[df_out[climate_var].notnull()]  # Filtrar valores no nulos en la variable climática
+    
+    return df_out
 
-    # --------------------------------------------------------------------------
-    # Definición de filtros en la barra lateral
-    # --------------------------------------------------------------------------
-    st.sidebar.header("Filtros")
 
-    # Lista de nombres comunes y científicos únicos, ordenados alfabéticamente.
-    # Se usan selectboxes (menús desplegables) para que el usuario elija una
-    # opción. Los selectboxes devuelven la opción seleccionada【883161431007632†L375-L389】.
-    common_names = sorted(df["COMMON NAME"].dropna().unique())
-
-    # Selección de nombre común
-    selected_common = st.sidebar.selectbox(
-        "Seleccione el nombre común", options=common_names
-    )
-
-    # Filtra las opciones de nombre científico según el nombre común elegido. De
-    # este modo, se evita que el usuario seleccione combinaciones inexistentes.
-    possible_scientific = (
-        df.loc[df["COMMON NAME"] == selected_common, "SCIENTIFIC NAME"]
-        .dropna()
-        .unique()
-    )
-    scientific_names = sorted(possible_scientific)
-    selected_scientific = st.sidebar.selectbox(
-        "Seleccione el nombre científico", options=scientific_names
-    )
-
-    # Lista de variables climáticas disponibles. Puedes agregar o quitar
-    # variables dependiendo de tu DataFrame. Estas columnas deben existir en
-    # df_out.
-    climate_variables = [
-        "PRECTOTCORR",
-        "PS",
-        "QV2M",
-        "RH2M",
-        "T2M",
-        "T2MDEW",
-        "T2MWET",
-        "T2M_MAX",
-        "T2M_MIN",
-        "T2M_RANGE",
-        "TS",
-        "WD10M",
-        "WD2M",
-        "WS10M",
-        "WS10M_MAX",
-        "WS10M_MIN",
-        "WS10M_RANGE",
-        "WS2M",
-        "WS2M_MAX",
-        "WS2M_MIN",
-        "WS2M_RANGE",
+def infer_climate_columns(df: pd.DataFrame) -> List[str]:
+    """Devuelve la lista de columnas que consideraremos como variables climáticas.
+    Se basa en tu lista declarada; ignora columnas de identificación y conteo."""
+    declared = [
+        "PRECTOTCORR", "PS", "QV2M", "RH2M", "T2M", "T2MDEW", "T2MWET",
+        "T2M_MAX", "T2M_MIN", "T2M_RANGE", "TS", "WD10M", "WD2M",
+        "WS10M", "WS10M_MAX", "WS10M_MIN", "WS10M_RANGE", "WS2M",
+        "WS2M_MAX", "WS2M_MIN", "WS2M_RANGE",
     ]
-    available_vars = [var for var in climate_variables if var in df.columns]
-    selected_var = st.sidebar.selectbox(
-        "Seleccione una variable climática", options=available_vars
-    )
+    return [c for c in declared if c in df.columns]
 
-    # --------------------------------------------------------------------------
-    # Filtrar el DataFrame según las selecciones del usuario
-    # --------------------------------------------------------------------------
-    # Combinamos los filtros de nombre común y nombre científico. Esto nos
-    # proporciona el subconjunto de datos para la especie seleccionada.
-    species_df = df[
-        (df["COMMON NAME"] == selected_common)
-        & (df["SCIENTIFIC NAME"] == selected_scientific)
-    ]
+# Cargar datos desde ZIP
+df = load_data("out.zip")
 
-    # --------------------------------------------------------------------------
-    # Visualización 1: Avistamientos totales por especie
-    # --------------------------------------------------------------------------
-    st.header("Avistamientos por especie")
-    # Calcula la suma de avistamientos por nombre común. Si tu DataFrame usa
-    # otra columna para el conteo (por ejemplo, log_avistamientos), modifica
-    # accordingly.
-    if "avistamientos" in df.columns:
-        av_counts = df.groupby("COMMON NAME")["avistamientos"].sum().reset_index()
-        fig_bar = px.bar(
-            av_counts,
-            x="COMMON NAME",
-            y="avistamientos",
-            title="Cantidad total de avistamientos por especie",
-            labels={"COMMON NAME": "Especie", "avistamientos": "Avistamientos"},
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-    else:
-        st.info(
-            "La columna 'avistamientos' no está presente en el DataFrame. No se puede generar el gráfico de barras."
-        )
+# Verificar que df es un DataFrame
+if isinstance(df, pd.DataFrame):
+    # Llamar a la función de inferencia de columnas climáticas
+    CLIMATE_COLS = infer_climate_columns(df)
+else:
+    st.error("El archivo CSV no se cargó correctamente.")
 
+# Mapas de nombres (para sincronizar filtros)
+common_names = sorted(df["COMMON NAME"].dropna().unique()) if "COMMON NAME" in df.columns else []
+scientific_names = sorted(df["SCIENTIFIC NAME"].dropna().unique()) if "SCIENTIFIC NAME" in df.columns else []
+
+
+# Widgets de filtros — sincronizados
+st.sidebar.subheader("🎯 Filtros por especie")
+selected_common = st.sidebar.selectbox("Common Name", options=["(Todos)"] + common_names, index=0)
+selected_scient = st.sidebar.selectbox("Scientific Name", options=["(Todos)"] + scientific_names, index=0)
+
+common = None if selected_common == "(Todos)" else selected_common
+scient = None if selected_scient == "(Todos)" else selected_scient
+
+# Si el usuario escoge un common_name, acota el scientific y viceversa (visual)
+if common:
+    candidates = df.loc[df["COMMON NAME"] == common, "SCIENTIFIC NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Especies científicas para '{common}': {', '.join(sorted(set(map(str, candidates))))}")
+if scient:
+    candidates = df.loc[df["SCIENTIFIC NAME"] == scient, "COMMON NAME"].dropna().unique().tolist()
+    st.sidebar.caption(f"Nombres comunes para '{scient}': {', '.join(sorted(set(map(str, candidates))))}")
+
+# Filtrado principal según la barra lateral
+filtered = filter_df(df, scient, common)
+
+# Mostrar el DataFrame filtrado
+st.write("Datos Filtrados:", filtered)
+
+#-------------------------------------
+
+# Lista de especies disponibles para filtrar
+mis_especies = df_out['COMMON NAME'].unique().tolist()
+
+# Variables climáticas (asumidas según tu código)
+variables_climaticas = ['T2M_MIN', 'T2M_MAX', 'PS', 'QV2M', 'WS10M_MAX', 
+                        'PRECTOTCORR', 'T2M_RANGE', 'RH2M']
+
+# Filtro de la especie seleccionado en la barra lateral (ya lo tienes)
+especie_seleccionada = st.sidebar.selectbox("Selecciona una especie", mis_especies)
+
+# Filtro de la variable climática
+variable_seleccionada = st.sidebar.selectbox("Selecciona una variable climática", variables_climaticas)
+
+# Ordenar los meses
+orden_meses = ['01','02','03','04','05','06','07','08','09','10','11','12']
+
+# Función para crear el gráfico
+def generar_grafico(especie, var):
+    # Filtrar los datos para la especie seleccionada
+    datos = df_out[df_out['COMMON NAME'] == especie].copy()
+    if datos.empty:
+        st.warning(f"No hay datos para la especie '{especie}'.")
+        return
+
+    # Asegurar que MONTH esté formateado correctamente
+    df_out['MONTH_x'] = df_out['MONTH_x'].astype(str).str.zfill(2)
+
+    # Agregar promedio mensual de la variable climática
+    clima = df_out.groupby('MONTH_x')[var].mean().reset_index()
+
+    # Unir los datos de avistamientos con los de clima
+    datos = pd.merge(datos, clima, on='MONTH_x', how='left')
+
+    # Ordenar los meses correctamente
+    datos['MONTH_x'] = pd.Categorical(datos['MONTH_x'], categories=orden_meses, ordered=True)
+    datos = datos.sort_values('MONTH_x')
+
+    # Verifica que no esté vacío después del merge
+    if datos[var].isnull().all():
+        st.warning(f"Todos los valores de {var} son NaN después del merge.")
+        return
+
+    # Crear el gráfico
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Eje izquierdo: log de avistamientos
+    sns.lineplot(data=datos, x='MONTH_x', y='log_avistamientos', label='log10(Avistamientos + 1)', color='blue', ax=ax1)
+    ax1.set_ylabel('log10(Avistamientos + 1)', color='blue')
+
+    # Eje derecho: variable climática
+    ax2 = ax1.twinx()
+    sns.lineplot(data=datos, x='MONTH_x', y=var, label=var, color='red', ax=ax2)
+    ax2.set_ylabel(var, color='red')
+
+    # Título y ajustes
+    plt.title(f'Avistamientos (log) y {var} por mes - {especie}')
+    plt.xlabel('Mes')
+    plt.tight_layout()
+
+    # Mostrar el gráfico en Streamlit
+    st.pyplot(fig)
+    
 # ------------------------
 # Secciones (Tabs principales)
 # ------------------------
